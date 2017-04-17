@@ -101,6 +101,21 @@ var UIController = (function() {
       document.querySelector(element).insertAdjacentHTML('beforeend', newHtml);
     },
 
+    //Clear the input fields after an item is added.
+    clearFields: function() {
+      var fields, fieldsArr;
+      //Assign input fields to a variable. Comma needed to select multiple strings.
+      fields = document.querySelectorAll(DOMStrings.inputDescription + ', ' + DOMStrings.inputValue);
+      //querySelectorAll returns a list; .slice returns an array, as needed. Use the Array prototype (where .slice can be accessed), .call to set 'this' variable.
+      fieldsArr = Array.prototype.slice.call(fields);
+      //.forEach method, faster than a normal for loop. Clear all items using empty string.
+      fieldsArr.forEach(function(current, index, array) {
+        current.value = '';
+      });
+      //Return focus to description input field after an item is added.
+      fieldsArr[0].focus();
+    },
+
     //Expose DOMStrings object for use in other controllers.
     getDomStrings: function() {
       return DOMStrings;
@@ -128,14 +143,17 @@ var controller = (function(budgetCtrl, UICtrl) {
   var ctrlAddItem = function() {
     var input, newItem;
     //Get input data via getInput method on UIController object.
-    var input = UICtrl.getInput();
+    input = UICtrl.getInput();
     //Add item to budget CONTROLLER
-    var newItem = budgetCtrl.addItem(input.type, input.description, input.value);
+    newItem = budgetCtrl.addItem(input.type, input.description, input.value);
     //Add item to the UI
     UICtrl.addListItem(newItem, input.type);
+    //Clear the fields
+    UICtrl.clearFields();
     //Calc budget
 
     //Display budget
+
   };
 
   //Globally available method to call eventListeners function.
