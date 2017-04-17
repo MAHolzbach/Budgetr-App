@@ -99,14 +99,18 @@ var budgetController = (function() {
 ///////////////////UI CONTROLLER////////////////////////
 var UIController = (function() {
 
-  //Storage for strings from DOM if needed for changes.
+  //Storage for strings from DOM.
   var DOMStrings = {
     inputType: '.add__type',
     inputDescription: '.add__description',
     inputValue: '.add__value',
     inputBtn: '.add__btn',
     incomeContainer: '.income__list',
-    expensesContainer: '.expenses__list'
+    expensesContainer: '.expenses__list',
+    budgetLabel: '.budget__value',
+    incomeLabel: '.budget__income--value',
+    expensesLabel: '.budget__expenses--value',
+    percentageLabel: '.budget__expenses--percentage'
   };
 
   return {
@@ -157,6 +161,19 @@ var UIController = (function() {
       fieldsArr[0].focus();
     },
 
+    //Display budget in user UI.
+    displayBudget: function(obj) {
+      document.querySelector(DOMStrings.budgetLabel).textContent = obj.budget;
+      document.querySelector(DOMStrings.incomeLabel).textContent = obj.totalInc;
+      document.querySelector(DOMStrings.expensesLabel).textContent = obj.totalExp;
+      //If statement to deal with non-sensical display bug.
+      if(obj.percentage > 0) {
+        document.querySelector(DOMStrings.percentageLabel).textContent = obj.percentage + '%';
+      } else {
+        document.querySelector(DOMStrings.percentageLabel).textContent = '---';
+      }
+    },
+
     //Expose DOMStrings object for use in other controllers.
     getDomStrings: function() {
       return DOMStrings;
@@ -188,7 +205,7 @@ var controller = (function(budgetCtrl, UICtrl) {
       //Get budget; store in variable (only returned in getBudget method, not stored anywhere)
       var budget = budgetCtrl.getBudget();
       //Display budget
-      console.log(budget);
+      UICtrl.displayBudget(budget);
   };
 
   //Adding new items.
@@ -212,7 +229,14 @@ var controller = (function(budgetCtrl, UICtrl) {
   //Globally available method to call eventListeners function.
   return {
     init: function() {
-      console.log("App is running.")
+      console.log("App is running.");
+      //Set all initial values to zero on load.
+      UICtrl.displayBudget({
+        budget: 0,
+        totalInc: 0,
+        totalExp: 0,
+        percentage: -1
+      });
       setupEventListeners();
     }
   };
