@@ -1,4 +1,4 @@
-//BUDGET CONTROLLER
+///////////////////BUDGET CONTROLLER//////////////////////
 var budgetController = (function() {
 
   //Function contructor for expense objects.
@@ -15,6 +15,18 @@ var budgetController = (function() {
     this.value = value;
   };
 
+  //Private function for calculations.
+  var calculateTotal = function(type) {
+    //Placeholder value.
+    var sum = 0;
+    //Loop over array[type], inc or exp, using current value (cur).
+    data.allItems[type].forEach(function(cur) {
+      sum = sum + cur.value;
+    });
+    //Store value in global user data structure below.
+    data.totals[type] = sum;
+  };
+
   //Object to store user data. Nested objects for brevity.
   var data = {
     allItems: {
@@ -24,7 +36,9 @@ var budgetController = (function() {
     totals: {
       exp: 0,
       inc: 0
-    }
+    },
+    budget: 0,
+    percentage: -1
   };
 
   //Global method to allow other modules to add items into data structure.
@@ -49,14 +63,40 @@ var budgetController = (function() {
       //Allow global access to new item.
       return newItem;
     },
-    getData: function(){
+
+    //Calculation contoller method.
+    calculateBudget: function() {
+      //Calc total income and expenses.
+      calculateTotal('exp');
+      calculateTotal('inc');
+      //Calc budget: income - expenses.
+      data.budget = data.totals.inc - data.totals.exp;
+      //Calc percentage spent. If statement prevents strange results if number is 0.
+      if(data.totals.inc > 0) {
+        data.percentage = Math.round((data.totals.exp / data.totals.inc) * 100);
+      } else {
+        data.percentage = -1;
+      }
+    },
+
+    //Return budget for later use in updateBudget function. Object used to return multiple values simultaneously.
+    getBudget: function() {
+      return {
+        budget: data.budget,
+        totalInc: data.totals.inc,
+        totalExp: data.totals.exp,
+        percentage: data.percentage
+      };
+    },
+
+    test: function(){
       console.log(data);
     }
   };
 
 })();
 
-//UI CONTROLLER
+///////////////////UI CONTROLLER////////////////////////
 var UIController = (function() {
 
   //Storage for strings from DOM if needed for changes.
@@ -75,7 +115,8 @@ var UIController = (function() {
       return {
         type: document.querySelector(DOMStrings.inputType).value, //Either inc or exp.
         description: document.querySelector(DOMStrings.inputDescription).value,
-        value: document.querySelector(DOMStrings.inputValue).value
+        //As a number
+        value: parseFloat(document.querySelector(DOMStrings.inputValue).value)
       };
     },
 
@@ -123,7 +164,7 @@ var UIController = (function() {
   };
 })();
 
-//GLOBAL APP CONTROLLER
+//////////////GLOBAL APP CONTROLLER//////////////////////
 var controller = (function(budgetCtrl, UICtrl) {
 
   //Overall function to handle event listeners.
@@ -140,20 +181,32 @@ var controller = (function(budgetCtrl, UICtrl) {
     });
   };
 
+  //Updating the budget.
+  var updateBudget = function() {
+      //Calc budget
+      budgetCtrl.calculateBudget();
+      //Get budget; store in variable (only returned in getBudget method, not stored anywhere)
+      var budget = budgetCtrl.getBudget();
+      //Display budget
+      console.log(budget);
+  };
+
+  //Adding new items.
   var ctrlAddItem = function() {
     var input, newItem;
     //Get input data via getInput method on UIController object.
     input = UICtrl.getInput();
-    //Add item to budget CONTROLLER
-    newItem = budgetCtrl.addItem(input.type, input.description, input.value);
-    //Add item to the UI
-    UICtrl.addListItem(newItem, input.type);
-    //Clear the fields
-    UICtrl.clearFields();
-    //Calc budget
-
-    //Display budget
-
+    //If statement to prevent empty, 0, or NaN items being added to budget.
+    if(input.description !== '' && !isNaN(input.value) && input.value > 0) {
+      //Add item to budget CONTROLLER
+      newItem = budgetCtrl.addItem(input.type, input.description, input.value);
+      //Add item to the UI
+      UICtrl.addListItem(newItem, input.type);
+      //Clear the fields
+      UICtrl.clearFields();
+      //Calculate and update budget
+      updateBudget();
+    }
   };
 
   //Globally available method to call eventListeners function.
