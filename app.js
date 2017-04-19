@@ -64,6 +64,21 @@ var budgetController = (function() {
       return newItem;
     },
 
+    //Item deletion method. Item IDs may be unordered(items can be deleted in any order), so create an array of all IDs and find index of the input ID(the one to delete).
+    deleteItem: function(type, id) {
+      var ids, index;
+      //Create array of all IDs.
+      ids = data.allItems[type].map(function(current) {
+        return current.id;
+      });
+      //Get needed item ID.
+      index = ids.indexOf(id);
+      //Delete item.
+      if(index !== -1) {
+        data.allItems[type].splice(index, 1);
+      }
+    },
+
     //Calculation contoller method.
     calculateBudget: function() {
       //Calc total income and expenses.
@@ -110,7 +125,8 @@ var UIController = (function() {
     budgetLabel: '.budget__value',
     incomeLabel: '.budget__income--value',
     expensesLabel: '.budget__expenses--value',
-    percentageLabel: '.budget__expenses--percentage'
+    percentageLabel: '.budget__expenses--percentage',
+    container: '.container'
   };
 
   return {
@@ -132,13 +148,13 @@ var UIController = (function() {
       if(type === 'inc') {
         element = DOMStrings.incomeContainer;
 
-        html = '<div class="item clearfix" id="income-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+        html = '<div class="item clearfix" id="inc-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
       } else if(type === 'exp') {
         element = DOMStrings.expensesContainer;
 
-        html = '<div class="item clearfix" id="expense-%id%"><div class="item__description">%description%</div><div class="right clearfix">              <div class="item__value">%value%</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+        html = '<div class="item clearfix" id="exp-%id%"><div class="item__description">%description%</div><div class="right clearfix">              <div class="item__value">%value%</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
       }
-      //Replace placeholder with actual text.
+      //Replace placeholders with actual text.
       newHtml = html.replace('%id%', obj.id);
       newHtml = newHtml.replace('%description%', obj.description);
       newHtml = newHtml.replace('%value%', obj.value);
@@ -196,6 +212,9 @@ var controller = (function(budgetCtrl, UICtrl) {
         ctrlAddItem();
       }
     });
+
+    //Set up event listener for item deletion; using event delegation.
+    document.querySelector(DOM.container).addEventListener('click', ctrlDeleteItem);
   };
 
   //Updating the budget.
@@ -224,6 +243,22 @@ var controller = (function(budgetCtrl, UICtrl) {
       //Calculate and update budget
       updateBudget();
     }
+  };
+
+  //Delete item function. Get event target, traverse DOM, get ID of the item we want and store it in the variable.
+  var ctrlDeleteItem = function(event) {
+    var itemID, splitID, type, ID;
+    //Traverse DOM to get id.
+     itemID = event.target.parentNode.parentNode.parentNode.parentNode.id;
+     //Split item id into usable pieces.
+     if(itemID) {
+       splitID = itemID.split('-');
+       type = splitID[0];
+       //ParseInt to change string into a number to avoid deletion method from Budget Controller always returning false on its if statement(comparing number to string).
+       ID = parseInt(splitID[1]);
+       //Call item deletion method from Budget Controller, passing it variables from just above.
+       budgetCtrl.deleteItem(type, ID);
+     }
   };
 
   //Globally available method to call eventListeners function.
